@@ -28,32 +28,26 @@ function preload ()
 function create ()
 {
     var animConfig = {
-        paletteKey: 'link-palette',
-        paletteNames: ['green', 'red', 'blue', 'purple'],
-        spriteSheet: 'link',
-        animations: ['walk-down', 'walk-left', 'walk-up']
+        paletteKey: 'link-palette',                         // Palette file we're referencing.
+        paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the.
+        spriteSheet: 'link',                                // Spritesheet we're manipulating.
+        animations: ['walk-down', 'walk-left', 'walk-up']   // Names for each of the animations in the sheet.
     };
 
-    // NOTE: WIP.
+    // Create the dynamic texture atlases and animations.
     createPalettes(animConfig);
 
-    // Make test animations.
-    // TODO: Replace with animations created from createPalettes.
-    for (var i = 0; i < animConfig.animations.length; i++) {
-        this.anims.create({
-            key: 'link-green-' + animConfig.animations[i],
-            frames: this.anims.generateFrameNumbers('link', {start: 0 + (i * 10), end: 9 + (i * 10)}),
-            frameRate: 15,
-            repeat: -1
-        });
-    }
+    console.log(this.textures);
+    console.log(this.anims);
 
     // Add text.
     this.add.text(5, 5, "WASD: Change Animation");
     this.add.text(5, 20, "X: Change Palette");
 
     // Add sprite.
-    var link = this.add.sprite(120, 80, 'link');
+    var link = this.add.sprite(120, 80, 'link-green').setScale(2);
+
+    // Set color and animation.
     link.color = 'green';
     link.anims.play('link-' + link.color + '-walk-down');
 
@@ -92,6 +86,7 @@ function createPalettes (config)
     var pixel, palette;
     var paletteWidth = game.textures.get(config.paletteKey).getSourceImage().width;
 
+    // Go through each pixel in the palette image and add it to the color lookup.
     for (y = 0; y < config.paletteNames.length; y++) {
         palette = config.paletteNames[y];
         colorLookup[palette] = [];
@@ -104,27 +99,68 @@ function createPalettes (config)
 
     console.log(colorLookup);
 
-    // Create frame data.
-    var atlasData = { frames: {} };
+    // Create texture atlas from frame data.
+    var animData = {};
+    var atlasData;
+    var atlasKey, animKey, canvasTexture, canvas;
 
+    // Iterate over each palette.
     for (y = 0; y < config.paletteNames.length; y++) {
         palette = config.paletteNames[y];
+        atlasKey = config.spriteSheet + '-' + palette;
+        atlasData = { frames: [] };
 
-        // Iterate animations.
+        // Create a canvas to draw new image data onto.
+        canvasTexture = game.textures.createCanvas();
+
+        // Iterate over each animation.
         for (var a = 0; a < config.animations.length; a++) {
+            animKey = atlasKey + '-' + config.animations[a];
+            animData[animKey] = [];
+
             // Iterate frames for each animation.
-            // TODO:
+            // NOTE: Length hard coded for now.
             for (var f = 0; f < 10; f++) {
                 var frameName = config.animations[a] + (f ? f : '');
                 var frame = game.textures.getFrame(config.spriteSheet, (a * 10) + f);
 
-                // TODO: Replace RGB data.
+                // TODO: Copy frame into new canvas.
+                // TODO: Replace RGB in new frame.
 
-                // Add this to the texture atlas definition.
-                atlasData.frames[config.spriteSheet + '-' + palette + '-' + frameName] = { frame: { x: frame.cutX, y: frame.cutY, w: frame.width, h: frame.height } };
+                // Add this to the texture atlas definitions.
+                atlasData.frames.push({
+                    filename: atlasKey + '-' + frameName,
+                    frame: { x: frame.cutX, y: frame.cutY, w: frame.width, h: frame.height },
+                    // NOTE: Do I *need* the following?
+                    rotated: false,
+                    trimmed: true,
+                    spriteSourceSize: { x: frame.cutX, y: frame.cutY, w: frame.width, h: frame.height },
+                    sourceSize: { w: frame.width, h: frame.height }
+                });
+
+                // Add this to the animation definitions.
+                animData[animKey].push({
+                    key: atlasKey,
+                    frame: atlasKey + '-' + frameName,
+                    // NOTE: Do I *need* the following?
+                    duration: 0,
+                    visible: false
+                });
             }
         }
+
+        // Add texture atlas to game.
+        game.textures.addAtlasJSONArray(atlasKey, canvasTexture.getSourceImage(), atlasData);
     }
 
-    console.log(atlasData);
+    // Now that the atlases for all the palettes have been made,
+    // make each necessary animation.
+    for (var key in animData) {
+        game.anims.create({
+            key: key,
+            frames: animData[key],
+            frameRate: 15,  // NOTE: Hard coded for now.
+            repeat: -1
+        });
+    }
 }
