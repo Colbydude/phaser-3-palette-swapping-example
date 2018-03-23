@@ -37,6 +37,15 @@ function create ()
     // Create the dynamic texture atlases and animations.
     createPalettes(animConfig);
 
+    for (var i = 0; i < animConfig.animations.length; i++) {
+        this.anims.create({
+            key: 'link-default-' + animConfig.animations[i],
+            frames: this.anims.generateFrameNumbers('link', {start: 0 + (i * 10), end: 9 + (i * 10)}),
+            frameRate: 15,
+            repeat: -1
+        });
+    }
+
     console.log(this.textures);
     console.log(this.anims);
 
@@ -101,6 +110,7 @@ function createPalettes (config)
 
     // Create texture atlas from frame data.
     var animData = {};
+    var sheet = game.textures.get(config.spriteSheet).getSourceImage();
     var atlasData;
     var atlasKey, animKey, canvasTexture, canvas;
 
@@ -111,7 +121,8 @@ function createPalettes (config)
         atlasData = { frames: [] };
 
         // Create a canvas to draw new image data onto.
-        canvasTexture = game.textures.createCanvas();
+        canvasTexture = game.textures.createCanvas(atlasKey, sheet.width, sheet.height);
+        canvas = canvasTexture.getSourceImage().getContext('2d');
 
         // Iterate over each animation.
         for (var a = 0; a < config.animations.length; a++) {
@@ -124,7 +135,15 @@ function createPalettes (config)
                 var frameName = config.animations[a] + (f ? f : '');
                 var frame = game.textures.getFrame(config.spriteSheet, (a * 10) + f);
 
-                // TODO: Copy frame into new canvas.
+                // Copy frame into new canvas.
+                canvas.drawImage(
+                    sheet,
+                    frame.cutX, frame.cutY, frame.width, frame.height,
+                    frame.cutX, frame.cutY, frame.width, frame.height
+                );
+                console.log({frame: atlasKey + '-' + frameName, destX: frame.cutX, destY: frame.cutY, dWidth: frame.width, dHeight: frame.height});
+                // NOTE: Locations are seemingly correct, but animation comes out wonky in the end?
+
                 // TODO: Replace RGB in new frame.
 
                 // Add this to the texture atlas definitions.
