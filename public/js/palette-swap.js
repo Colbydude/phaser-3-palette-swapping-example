@@ -29,7 +29,7 @@ function create ()
 {
     var animConfig = {
         paletteKey: 'link-palette',                         // Palette file we're referencing.
-        paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the.
+        paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the names for the atlas.
         spriteSheet: 'link',                                // Spritesheet we're manipulating.
         animations: ['walk-down', 'walk-left', 'walk-up']   // Names for each of the animations in the sheet.
     };
