@@ -45,7 +45,7 @@ function create ()
     this.add.text(5, 20, "X: Change Palette");
 
     // Add sprite.
-    var link = this.add.sprite(120, 80, 'link').setScale(2);
+    var link = this.add.sprite(120, 80, 'link-' + animConfig.paletteNames[0]).setScale(2);
 
     // Set color and animation.
     link.color = animConfig.paletteNames[0];
@@ -109,10 +109,9 @@ function createPalettes (config)
     console.log(colorLookup);
 
     // Create texture atlas from frame data.
-    var animData = {};
     var sheet = game.textures.get(config.spriteSheet).getSourceImage();
     var atlasKey, animKey;
-    var canvasTexture, canvas, context;
+    var canvasTexture, canvas, context, imageData, pixelArray;
 
     // Iterate over each palette.
     for (y = 0; y < config.paletteNames.length; y++) {
@@ -126,9 +125,42 @@ function createPalettes (config)
         context = canvas.getContext('2d');
 
         // Copy the sheet.
-        context.drawImage(sheet, 0, 0, sheet.width, sheet.height);
+        context.drawImage(sheet, 0, 0);
 
-        // TODO: Replace pixels throughout sheet.
+        // Get image data from the new sheet.
+        imageData = context.getImageData(0, 0, sheet.width, sheet.height);
+        pixelArray = imageData.data;
+
+        // Iterate through every pixel in the image.
+        for (var p = 0; p < pixelArray.length / 4; p++) {
+            var index = 4 * p;
+
+            var r = pixelArray[index];
+            var g = pixelArray[++index];
+            var b = pixelArray[++index];
+            var alpha = pixelArray[++index];
+
+            // If this is a transparent pixel, move on.
+            if (alpha === 0) {
+                continue;
+            }
+
+            // Iterate through the colors in the palette.
+            for (var c = 0; c < paletteWidth; c++) {
+                var oldColor = colorLookup[config.paletteNames[0]][c];
+                var newColor = colorLookup[palette][c];
+
+                // If the color matches, replace the color.
+                if (r === oldColor.r && g === oldColor.g && b === oldColor.b && alpha === 255) {
+                    pixelArray[--index] = newColor.b;
+                    pixelArray[--index] = newColor.g;
+                    pixelArray[--index] = newColor.r;
+                }
+            }
+        }
+
+        // Put our modified pixel data back into the context.
+        context.putImageData(imageData, 0, 0);
 
         // Add the canvas as a sprite sheet to the game.
         game.textures.addSpriteSheet(atlasKey, canvasTexture.getSourceImage(), {
@@ -145,7 +177,7 @@ function createPalettes (config)
             // Add the animation to the game.
             game.anims.create({
                 key: animKey,
-                frames: game.anims.generateFrameNumbers('link', {start: 0 + (a * 10), end: 9 + (a * 10)}),
+                frames: game.anims.generateFrameNumbers(atlasKey, {start: 0 + (a * 10), end: 9 + (a * 10)}),
                 frameRate: 15,  // NOTE: Hard coded for now.
                 repeat: -1
             });
