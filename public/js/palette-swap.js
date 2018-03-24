@@ -30,7 +30,11 @@ function create ()
     var animConfig = {
         paletteKey: 'link-palette',                         // Palette file we're referencing.
         paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the names for the atlas.
-        spriteSheet: 'link',                                // Spritesheet we're manipulating.
+        spriteSheet: {                                      // Spritesheet we're manipulating.
+            key: 'link',
+            frameWidth: 32,                                 // NOTE: Potential drawback. All frames are the same size.
+            frameHeight: 32
+        },
         animations: [                                       // Animation data.
             {key: 'walk-down', frameRate: 15, startFrame: 0, endFrame: 9},
             {key: 'walk-left', frameRate: 15, startFrame: 10, endFrame: 19},
@@ -114,17 +118,17 @@ function createPalettes (config)
     }
 
     // Create sheets and animations from base sheet.
-    var sheet = game.textures.get(config.spriteSheet).getSourceImage();
+    var sheet = game.textures.get(config.spriteSheet.key).getSourceImage();
     var atlasKey, anim, animKey;
     var canvasTexture, canvas, context, imageData, pixelArray;
 
     // Iterate over each palette.
     for (y = 0; y < config.paletteNames.length; y++) {
         palette = config.paletteNames[y];
-        atlasKey = config.spriteSheet + '-' + palette;
+        atlasKey = config.spriteSheet.key + '-' + palette;
 
         // Create a canvas to draw new image data onto.
-        canvasTexture = game.textures.createCanvas(config.spriteSheet + '-temp', sheet.width, sheet.height);
+        canvasTexture = game.textures.createCanvas(config.spriteSheet.key + '-temp', sheet.width, sheet.height);
         canvas = canvasTexture.getSourceImage();
         context = canvas.getContext('2d');
 
@@ -168,10 +172,8 @@ function createPalettes (config)
 
         // Add the canvas as a sprite sheet to the game.
         game.textures.addSpriteSheet(atlasKey, canvasTexture.getSourceImage(), {
-            frameWidth: 32,
-            frameHeight: 32,
-            startFrame: 0,
-            endFrame: 29
+            frameWidth: config.spriteSheet.frameWidth,
+            frameHeight: config.spriteSheet.frameHeight,
         });
 
         // Iterate over each animation.
@@ -192,7 +194,7 @@ function createPalettes (config)
     // Destroy textures that are not longer needed.
     // NOTE: This doesn't remove the textures from TextureManager.list.
     //       However, it does destroy source image data.
-    game.textures.get(config.spriteSheet).destroy();
-    game.textures.get(config.spriteSheet + '-temp').destroy();
+    game.textures.get(config.spriteSheet.key).destroy();
+    game.textures.get(config.spriteSheet.key + '-temp').destroy();
     game.textures.get(config.paletteKey).destroy();
 }

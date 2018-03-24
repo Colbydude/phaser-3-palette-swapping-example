@@ -18,7 +18,11 @@ We then define a config containing the relevant information for creating the nec
 var animConfig = {
     paletteKey: 'link-palette',                         // Palette file we're referencing.
     paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the names for the atlas.
-    spriteSheet: 'link',                                // Spritesheet we're manipulating.
+    spriteSheet: {                                      // Spritesheet we're manipulating.
+        key: 'link',
+        frameWidth: 32,                                 // NOTE: Potential drawback. All frames are the same size.
+        frameHeight: 32
+    },
     animations: [                                       // Animation data.
         {key: 'walk-down', frameRate: 15, startFrame: 0, endFrame: 9},
         {key: 'walk-left', frameRate: 15, startFrame: 10, endFrame: 19},
