@@ -1,5 +1,5 @@
 var config = {
-    type: Phaser.CANVAS,
+    type: Phaser.AUTO,
     parent: 'phaser-example',
     pixelArt: true,
     width: 240,
@@ -31,15 +31,17 @@ function create ()
         paletteKey: 'link-palette',                         // Palette file we're referencing.
         paletteNames: ['green', 'red', 'blue', 'purple'],   // Names for each palette to build out the names for the atlas.
         spriteSheet: 'link',                                // Spritesheet we're manipulating.
-        animations: ['walk-down', 'walk-left', 'walk-up']   // Names for each of the animations in the sheet.
+        animations: [                                       // Animation data.
+            {key: 'walk-down', frameRate: 15, startFrame: 0, endFrame: 9},
+            {key: 'walk-left', frameRate: 15, startFrame: 10, endFrame: 19},
+            {key: 'walk-up', frameRate: 15, startFrame: 20, endFrame: 29}
+        ]
     };
 
-    // Create the dynamic texture atlases and animations.
+    // Create the dynamic spritesheets and animations.
     createPalettes(animConfig);
 
-    console.log(this.textures);
-    console.log(this.anims);
-
+    // -- DEMO -- \\
     // Add text.
     this.add.text(5, 5, "WASD: Change Animation");
     this.add.text(5, 20, "X: Change Palette");
@@ -49,27 +51,27 @@ function create ()
 
     // Set color and animation.
     link.color = animConfig.paletteNames[0];
-    link.anims.play('link-' + link.color + '-' + animConfig.animations[0]);
+    link.anims.play('link-' + link.color + '-walk-down');
 
     // Handle Input.
     this.input.keyboard.on('keydown_W', function (event) {
         link.flipX = false;
-        link.anims.play('link-' + link.color + '-' + animConfig.animations[2]);
+        link.anims.play('link-' + link.color + '-walk-up');
     });
 
     this.input.keyboard.on('keydown_A', function (event) {
         link.flipX = false;
-        link.anims.play('link-' + link.color + '-' + animConfig.animations[1]);
+        link.anims.play('link-' + link.color + '-walk-left');
     });
 
     this.input.keyboard.on('keydown_S', function (event) {
         link.flipX = false;
-        link.anims.play('link-' + link.color + '-' + animConfig.animations[0]);
+        link.anims.play('link-' + link.color + '-walk-down');
     });
 
     this.input.keyboard.on('keydown_D', function (event) {
         link.flipX = true;
-        link.anims.play('link-' + link.color + '-' + animConfig.animations[1]);
+        link.anims.play('link-' + link.color + '-walk-left');
     });
 
     this.input.keyboard.on('keydown_X', function (event) {
@@ -83,10 +85,15 @@ function create ()
 
         link.color = animConfig.paletteNames[index];
 
-        link.anims.play('link-' + link.color + '-' + animConfig.animations[0]);
+        link.anims.play('link-' + link.color + '-walk-down');
     });
 }
 
+/**
+ * Creates new sprite sheets and animations from the given palette and spritesheet.
+ *
+ * @param {object} config - Config schema.
+ */
 function createPalettes (config)
 {
     // Create color lookup from palette image.
@@ -106,18 +113,15 @@ function createPalettes (config)
         }
     }
 
-    console.log(colorLookup);
-
-    // Create texture atlas from frame data.
+    // Create sheets and animations from base sheet.
     var sheet = game.textures.get(config.spriteSheet).getSourceImage();
-    var atlasKey, animKey;
+    var atlasKey, anim, animKey;
     var canvasTexture, canvas, context, imageData, pixelArray;
 
     // Iterate over each palette.
     for (y = 0; y < config.paletteNames.length; y++) {
         palette = config.paletteNames[y];
         atlasKey = config.spriteSheet + '-' + palette;
-        atlasData = { frames: [] };
 
         // Create a canvas to draw new image data onto.
         canvasTexture = game.textures.createCanvas(config.spriteSheet + '-temp', sheet.width, sheet.height);
@@ -140,7 +144,7 @@ function createPalettes (config)
             var b = pixelArray[++index];
             var alpha = pixelArray[++index];
 
-            // If this is a transparent pixel, move on.
+            // If this is a transparent pixel, ignore, move on.
             if (alpha === 0) {
                 continue;
             }
@@ -172,15 +176,23 @@ function createPalettes (config)
 
         // Iterate over each animation.
         for (var a = 0; a < config.animations.length; a++) {
-            animKey = atlasKey + '-' + config.animations[a];
+            anim = config.animations[a];
+            animKey = atlasKey + '-' + anim.key;
 
             // Add the animation to the game.
             game.anims.create({
                 key: animKey,
-                frames: game.anims.generateFrameNumbers(atlasKey, {start: 0 + (a * 10), end: 9 + (a * 10)}),
-                frameRate: 15,  // NOTE: Hard coded for now.
-                repeat: -1
+                frames: game.anims.generateFrameNumbers(atlasKey, {start: anim.startFrame, end: anim.endFrame}),
+                frameRate: anim.frameRate,
+                repeat: anim.repeat === undefined ? -1 : anim.repeat
             });
         }
     }
+
+    // Destroy textures that are not longer needed.
+    // NOTE: This doesn't remove the textures from TextureManager.list.
+    //       However, it does destroy source image data.
+    game.textures.get(config.spriteSheet).destroy();
+    game.textures.get(config.spriteSheet + '-temp').destroy();
+    game.textures.get(config.paletteKey).destroy();
 }
