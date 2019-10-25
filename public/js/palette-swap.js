@@ -189,12 +189,14 @@ function createPalettes (config)
                 repeat: anim.repeat === undefined ? -1 : anim.repeat
             });
         }
+
+        // Destroy temp texture.
+        game.textures.get(config.spriteSheet.key + '-temp').destroy();
     }
 
     // Destroy textures that are not longer needed.
     // NOTE: This doesn't remove the textures from TextureManager.list.
     //       However, it does destroy source image data.
     game.textures.get(config.spriteSheet.key).destroy();
-    game.textures.get(config.spriteSheet.key + '-temp').destroy();
     game.textures.get(config.paletteKey).destroy();
 }
